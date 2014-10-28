@@ -11,6 +11,7 @@ Compiler.prototype.compile = function() {
 };
 
 Compiler.prototype.visit = function(node) {
+  if (!node || !node.type) return undefined;
   console.log('visit' + node.type);
   return this['visit' + node.type](node);
 };
@@ -68,7 +69,8 @@ Compiler.prototype.visitTag = function(node, ast) {
   var el = {
     tag: name,
     props: this.visitAttributes(node.attrs, node.attributeBlocks),
-    children: node.block && node.block.length && this.visit(node.block)
+    children: node.block && node.block.length && this.visit(node.block) ||
+              [this.visit(node.code)]
   };
 
   return el;
@@ -117,7 +119,16 @@ Compiler.prototype.visitCode = function(node) {
       },
       children: children
     };
+  case 'EXP':
+    return {
+      tag: 'NOOP',
+      childrenOnly: true,
+      props: {
+        'data-bind': expr
+      }
+    };
   }
+  throw node;
 };
 
 Compiler.prototype.visitEach = function(node, ast) {
@@ -131,8 +142,14 @@ Compiler.prototype.visitEach = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitAttributes = function(node, ast) {
-  // TODO
+Compiler.prototype.visitAttributes = function(attrs, blocks) {
+  return attrs.reduce(function(props, prop) {
+    var name = prop.name;
+    if (name.indexOf('-') === 0) name = 'data' + name;
+    // TODO figure out a syntax for interpolation
+    props[name] = prop.escaped ? prop.val : name;
+    return props;
+  }, {});
 };
 
 function errorAtNode(node, error) {

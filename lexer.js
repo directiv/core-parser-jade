@@ -2,15 +2,15 @@
  * Module dependencies
  */
 
-var jade = require('jade');
+var JLexer = require('jade').Lexer;
 var inherits = require('util').inherits;
 
 module.exports = Lexer;
 
 function Lexer() {
-  jade.Lexer.apply(this, arguments);
+  JLexer.apply(this, arguments);
 }
-inherits(Lexer, jade.Lexer);
+inherits(Lexer, JLexer);
 
 Lexer.prototype.conditional = function() {
   var captures;
@@ -58,6 +58,19 @@ Lexer.prototype.each = function() {
     var tok = this.tok('each', captures[1]);
     tok.key = captures[2] || '$index';
     tok.code = captures[3];
+    return tok;
+  }
+};
+
+Lexer.prototype.code = function() {
+  var captures;
+  if (captures = /^(!?=|-)[ \t]*([^\n]+)/.exec(this.input)) {
+    this.consume(captures[0].length);
+    var flags = captures[1];
+    captures[1] = captures[2];
+    var tok = this.tok('code', 'EXP' + captures[1]);
+    tok.escape = flags.charAt(0) === '=';
+    tok.buffer = flags.charAt(0) === '=' || flags.charAt(1) === '=';
     return tok;
   }
 };
