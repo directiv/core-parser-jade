@@ -17,15 +17,34 @@ Compiler.prototype.visit = function(node) {
 };
 
 Compiler.prototype.visitCase = function(node) {
-  // TODO
+  return {
+    type: 'switch',
+    expression: node.expr,
+    children: this.visit(node.block),
+    line: node.line,
+    filename: node.filename
+  }
 };
 
 Compiler.prototype.visitWhen = function(node) {
-  // TODO
+  return {
+    type: node.expr === 'default' ? 'default' : 'case',
+    expression: node.expr !== 'default' ? node.expr : undefined,
+    children: this.visit(node.block),
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitLiteral = function(node) {
-  // TODO
+  return {
+    type: 'expression',
+    expression: node.str,
+    buffer: node.buffer,
+    escape: node.escape,
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitBlock = function(node) {
@@ -35,26 +54,27 @@ Compiler.prototype.visitBlock = function(node) {
 
   for (var i = 0; i < length; ++i) {
     ast[i] = this.visit(node.nodes[i]);
-    // Multiple text nodes are separated by newlines
-    // if (block.nodes[i+1] && block.nodes[i].i// sText && block.nodes[i+1].isText)
-    //   this.buffer('\n');
   }
   return ast;
 };
 
 Compiler.prototype.visitMixinBlock = function(node, ast) {
   // TODO
+  throw errorAtNode(node, new Error('Mixins are not supported at this time'));
 };
 
 Compiler.prototype.visitDoctype = function(node, ast) {
   // TODO
+  throw errorAtNode(node, new Error('Doctypes are not supported at this time'));
 };
 
 Compiler.prototype.visitMixin = function(node, ast) {
   // TODO
+  throw errorAtNode(node, new Error('Mixins are not supported at this time'));
 };
 
 Compiler.prototype.visitTag = function(node, ast) {
+  var self = this;
   var name = node.name;
 
   if (node.selfClosing &&
@@ -66,11 +86,17 @@ Compiler.prototype.visitTag = function(node, ast) {
     throw errorAtNode(node, new Error(name + ' is self closing and should not have content.'));
   }
 
+  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).map(function(child) {
+    return self.visit(child);
+  });
+
   var el = {
-    tag: name,
+    type: 'tag',
+    name: name,
     props: this.visitAttributes(node.attrs, node.attributeBlocks),
-    children: node.block && node.block.length && this.visit(node.block) ||
-              [this.visit(node.code)]
+    children: children,
+    line: node.line,
+    filename: node.filename
   };
 
   return el;
@@ -78,18 +104,39 @@ Compiler.prototype.visitTag = function(node, ast) {
 
 Compiler.prototype.visitFilter = function(node, ast) {
   // TODO
+  throw errorAtNode(node, new Error('Filters are not supported at this time'));
 };
 
 Compiler.prototype.visitText = function(node, ast) {
-  // TODO
+  // TODO interpolation
+  // TODO unescape html expressions
+  return {
+    type: 'text',
+    expression: JSON.stringify(node.val),
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitComment = function(node, ast) {
-  // TODO
+  return {
+    type: node.buffer ? 'comment' : 'js_comment',
+    value: node.val,
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitBlockComment = function(node, ast) {
-  // TODO
+  var value = node.block.nodes.map(function(comment) {
+    return comment.val;
+  }).join('\n');
+  return {
+    type: node.buffer ? 'comment' : 'js_comment',
+    value: value,
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitCode = function(node) {
@@ -103,52 +150,75 @@ Compiler.prototype.visitCode = function(node) {
   switch(type) {
   case 'IFF':
     return {
-      tag: 'NOOP',
-      childrenOnly: true,
-      props: {
-        'data-if': expr
-      },
-      children: children
+      type: 'if',
+      expression: expr,
+      children: children,
+      line: node.line,
+      filename: node.filename
+    };
+  case 'NIF':
+    return {
+      type: 'unless',
+      expression: expr,
+      children: children,
+      line: node.line,
+      filename: node.filename
+    };
+  case 'ELF':
+    return {
+      type: 'elseif',
+      expression: expr,
+      children: children,
+      line: node.line,
+      filename: node.filename
     };
   case 'ELS':
     return {
-      tag: 'NOOP',
-      childrenOnly: true,
-      props: {
-        'data-if-not': expr
-      },
-      children: children
+      type: 'else',
+      children: children,
+      line: node.line,
+      filename: node.filename
     };
   case 'EXP':
     return {
-      tag: 'NOOP',
-      childrenOnly: true,
-      props: {
-        'data-bind': expr
-      }
+      type: 'expression',
+      buffer: node.buffer,
+      expression: expr,
+      escape: node.escape,
+      line: node.line,
+      filename: node.filename
     };
   }
   throw node;
 };
 
 Compiler.prototype.visitEach = function(node, ast) {
+  var parts = node.val.split(/ +in +/);
+
+  if (parts.length === 1) return {
+    type: 'for',
+    expression: node.val.replace(/^ *\(/, '').replace(/\) *$/, ''),
+    children: node.block && this.visit(node.block)
+  };
+
+  var kv = parts[0].split(/ *\, */);
+
   return {
-    tag: 'NOOP',
-    childrenOnly: true,
-    props: {
-      'data-repeat': node.val
-    },
+    type: 'each',
+    key: (kv[1] || node.key).trim(),
+    value: kv[0].trim(),
+    expression: parts[1].trim(),
     children: node.block && this.visit(node.block)
   };
 };
 
 Compiler.prototype.visitAttributes = function(attrs, blocks) {
-  return attrs.reduce(function(props, prop) {
-    var name = prop.name;
-    if (name.indexOf('-') === 0) name = 'data' + name;
-    // TODO figure out a syntax for interpolation
-    props[name] = prop.escaped ? prop.val : name;
-    return props;
+  return attrs.reduce(function(acc, attr) {
+    acc[attr.name] = {
+      expression: attr.val,
+      escaped: attr.escaped
+    };
+    return acc;
   }, {});
 };
 

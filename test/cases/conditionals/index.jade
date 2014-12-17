@@ -1,0 +1,10 @@
+if .users.create
+  form()
+    input(type="submit", value="Create User")
+else if .users.is-anon
+  p You are anonymous
+else
+  p You can't create users
+
+unless .users.is-admin
+  p Log out

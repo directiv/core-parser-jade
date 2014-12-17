@@ -1,0 +1,15 @@
+ul
+  each val in [1, 2, 3, 4, 5]
+    li= $index + ' ' + val
+
+ul
+  each val, index in [1, 2, 3]
+    li= index + ' ' + val
+
+ul
+  each val, index in {1: 'one', 2: 'two', 3: 'three'}
+    li= index + ' ' + val
+
+ul
+  for (var i = 0; i < 3; i++)
+    li= i
