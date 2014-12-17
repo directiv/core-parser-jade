@@ -12,7 +12,6 @@ Compiler.prototype.compile = function() {
 
 Compiler.prototype.visit = function(node) {
   if (!node || !node.type) return undefined;
-  console.log('visit' + node.type);
   return this['visit' + node.type](node);
 };
 
@@ -22,7 +21,8 @@ Compiler.prototype.visitCase = function(node) {
     expression: node.expr,
     children: this.visit(node.block),
     line: node.line,
-    filename: node.filename
+    filename: node.filename,
+    buffer: true
   }
 };
 
@@ -32,7 +32,8 @@ Compiler.prototype.visitWhen = function(node) {
     expression: node.expr !== 'default' ? node.expr : undefined,
     children: this.visit(node.block),
     line: node.line,
-    filename: node.filename
+    filename: node.filename,
+    buffer: true
   };
 };
 
@@ -96,7 +97,8 @@ Compiler.prototype.visitTag = function(node, ast) {
     props: this.visitAttributes(node.attrs, node.attributeBlocks),
     children: children,
     line: node.line,
-    filename: node.filename
+    filename: node.filename,
+    buffer: true
   };
 
   return el;
@@ -114,7 +116,8 @@ Compiler.prototype.visitText = function(node, ast) {
     type: 'text',
     expression: JSON.stringify(node.val),
     line: node.line,
-    filename: node.filename
+    filename: node.filename,
+    buffer: true
   };
 };
 
@@ -198,7 +201,8 @@ Compiler.prototype.visitEach = function(node, ast) {
   if (parts.length === 1) return {
     type: 'for',
     expression: node.val.replace(/^ *\(/, '').replace(/\) *$/, ''),
-    children: node.block && this.visit(node.block)
+    children: node.block && this.visit(node.block),
+    buffer: true
   };
 
   var kv = parts[0].split(/ *\, */);
@@ -208,18 +212,25 @@ Compiler.prototype.visitEach = function(node, ast) {
     key: (kv[1] || node.key).trim(),
     value: kv[0].trim(),
     expression: parts[1].trim(),
-    children: node.block && this.visit(node.block)
+    children: node.block && this.visit(node.block),
+    buffer: true
   };
 };
 
 Compiler.prototype.visitAttributes = function(attrs, blocks) {
-  return attrs.reduce(function(acc, attr) {
+  var out = attrs.reduce(function(acc, attr) {
+    if (attr.name === 'class' && acc[attr.name]) {
+      acc[attr.name].expression.push(attr.val);
+      return acc;
+    }
     acc[attr.name] = {
-      expression: attr.val,
+      expression: attr.name === 'class' ? [attr.val] : attr.val,
       escaped: attr.escaped
     };
     return acc;
   }, {});
+  if (out['class']) out['class'].expression = out['class'].expression.join(' + " " + ');
+  return out;
 };
 
 function errorAtNode(node, error) {
