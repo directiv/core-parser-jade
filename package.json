@@ -1,7 +1,7 @@
 {
-  "name": "directiv-core-parser-jade",
+  "name": "jade2ast",
   "version": "0.1.0",
-  "description": "Jade syntax to directiv html",
+  "description": "Jade syntax to ast",
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/.bin/mocha"

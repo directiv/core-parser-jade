@@ -1,4 +1,4 @@
-core-parser-jade
-================
+jade2ast
+========
 
-jade to directiv ast parser
+jade to ast parser
