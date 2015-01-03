@@ -60,7 +60,8 @@ Compiler.prototype.visitBlock = function(node) {
   var ast = [];
 
   for (var i = 0; i < length; ++i) {
-    ast[i] = this.visit(node.nodes[i]);
+    var out = this.visit(node.nodes[i]);
+    if (out) ast.push(out);
   }
   return ast;
 };
@@ -118,6 +119,7 @@ Compiler.prototype.visitFilter = function(node, ast) {
 };
 
 Compiler.prototype.visitText = function(node, ast) {
+  if (!node.val) return false;
   // TODO interpolation
   // TODO unescape html expressions
   return {
