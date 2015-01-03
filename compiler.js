@@ -11,6 +11,12 @@ Compiler.prototype.compile = function() {
 };
 
 Compiler.prototype.visit = function(node) {
+  if (node && node['yield']) return {
+    type: 'yield',
+    line: node.line,
+    filename: node.filename
+  };
+
   if (!node || !node.type) return undefined;
   return this['visit' + node.type](node);
 };
@@ -87,6 +93,8 @@ Compiler.prototype.visitTag = function(node, ast) {
     throw errorAtNode(node, new Error(name + ' is self closing and should not have content.'));
   }
 
+  if (name === 't') return self.visitTranslation(node, ast);
+
   var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).map(function(child) {
     return self.visit(child);
   });
@@ -119,6 +127,35 @@ Compiler.prototype.visitText = function(node, ast) {
     filename: node.filename,
     buffer: true
   };
+};
+
+Compiler.prototype.visitTranslation = function(node, ast) {
+  var self = this;
+  var attrs = node.attrs.slice();
+
+  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).map(function(child) {
+    if (child.type !== 'Block') throw errorAtNode(node, new Error('Invalid child for translation'));
+    var name = child.name;
+    if (!name) throw errorAtNode(node, new Error('Block missing name'));
+
+    attrs.push({
+      name: name,
+      val: self.visit(child),
+      block: true
+    });
+  });
+
+  var el = {
+    type: 'tag',
+    name: 't',
+    props: this.visitAttributes(attrs, node.attributeBlocks),
+    children: children,
+    line: node.line,
+    filename: node.filename,
+    buffer: true
+  };
+
+  return el;
 };
 
 Compiler.prototype.visitComment = function(node, ast) {
@@ -230,6 +267,8 @@ Compiler.prototype.visitAttributes = function(attrs, blocks) {
     return acc;
   }, {});
   if (out['class']) out['class'].expression = out['class'].expression.join(' + " " + ');
+  // TODO get this to work
+  // if (out['class']) out['class'].expression = '(((' + out['class'].expression.join(') || "") + " " + ((') + ')))';
   return out;
 };
 
