@@ -95,6 +95,8 @@ Compiler.prototype.visitTag = function(node, ast) {
   }
 
   if (name === 't') return self.visitTranslation(node, ast);
+  if (name === 'import') return self.visitImport(node, ast);
+  if (name === 'var') return self.visitVar(node, ast);
 
   var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).map(function(child) {
     return self.visit(child);
@@ -111,6 +113,24 @@ Compiler.prototype.visitTag = function(node, ast) {
   };
 
   return el;
+};
+
+Compiler.prototype.visitImport = function(node, ast) {
+  return {
+    type: 'import',
+    expression: node.block.nodes[0].val,
+    line: node.line,
+    filename: node.filename
+  };
+};
+
+Compiler.prototype.visitVar = function(node, ast) {
+  return {
+    type: 'var',
+    expression: node.block.nodes[0].val,
+    line: node.line,
+    filename: node.filename
+  };
 };
 
 Compiler.prototype.visitFilter = function(node, ast) {
@@ -150,7 +170,7 @@ Compiler.prototype.visitTranslation = function(node, ast) {
   var el = {
     type: 'tag',
     name: 't',
-    props: this.visitAttributes(attrs, node.attributeBlocks),
+    props: this.visitAttributes(attrs, node.attributeBlocks, true),
     children: children,
     line: node.line,
     filename: node.filename,
@@ -256,21 +276,32 @@ Compiler.prototype.visitEach = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitAttributes = function(attrs, blocks) {
-  var out = attrs.reduce(function(acc, attr) {
-    if (attr.name === 'class' && acc[attr.name]) {
-      acc[attr.name].expression.push(attr.val);
-      return acc;
+Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
+  var classes = [];
+
+  var out = attrs.reduce(function(acc, attr, i) {
+    if (attr.name === 'class') {
+      classes.push(attr.val);
+    } else if (isTranslate && i == 0 && attr.val === true) {
+      acc.path = {
+        expression: JSON.stringify(attr.name),
+        escaped: attr.escaped
+      };
+    } else {
+      acc[attr.name] = {
+        expression: attr.val,
+        escaped: attr.escaped
+      };
     }
-    acc[attr.name] = {
-      expression: attr.name === 'class' ? [attr.val] : attr.val,
-      escaped: attr.escaped
-    };
     return acc;
   }, {});
-  if (out['class']) out['class'].expression = out['class'].expression.join(' + " " + ');
-  // TODO get this to work
-  // if (out['class']) out['class'].expression = '(((' + out['class'].expression.join(') || "") + " " + ((') + ')))';
+
+  if (classes.length) {
+    out['class'] = {
+      expressions: classes
+    };
+  }
+
   return out;
 };
 
