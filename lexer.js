@@ -74,3 +74,7 @@ Lexer.prototype.code = function() {
     return tok;
   }
 };
+
+Lexer.prototype['yield'] = function() {
+  return this.scan(/^yield? *([^\n]+)?/, 'yield');
+};

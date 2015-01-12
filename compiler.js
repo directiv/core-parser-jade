@@ -11,12 +11,6 @@ Compiler.prototype.compile = function() {
 };
 
 Compiler.prototype.visit = function(node) {
-  if (node && node['yield']) return {
-    type: 'yield',
-    line: node.line,
-    filename: node.filename
-  };
-
   if (!node || !node.type) return undefined;
   return this['visit' + node.type](node);
 };
@@ -98,14 +92,18 @@ Compiler.prototype.visitTag = function(node, ast) {
   if (name === 'import') return self.visitImport(node, ast);
   if (name === 'var') return self.visitVar(node, ast);
 
-  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).map(function(child) {
-    return self.visit(child);
-  });
+  var attrs = node.attrs.slice();
+
+  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).reduce(function(acc, child) {
+    if (child.type !== 'Block' || !child.name) acc.push(self.visit(child));
+    else attrs.push({name: child.name, val: self.visit(child), block: true});
+    return acc;
+  }, []);
 
   var el = {
     type: 'tag',
     name: name,
-    props: this.visitAttributes(node.attrs, node.attributeBlocks),
+    props: this.visitAttributes(attrs, node.attributeBlocks),
     children: children,
     line: node.line,
     filename: node.filename,
@@ -273,6 +271,15 @@ Compiler.prototype.visitEach = function(node, ast) {
     expression: parts[1].trim(),
     children: node.block && this.visit(node.block),
     buffer: true
+  };
+};
+
+Compiler.prototype.visitYield = function(node, ast) {
+  return {
+    type: 'yield',
+    line: node.line,
+    filename: node.filename,
+    name: node.val
   };
 };
 
