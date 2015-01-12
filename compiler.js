@@ -96,7 +96,7 @@ Compiler.prototype.visitTag = function(node, ast) {
 
   var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).reduce(function(acc, child) {
     if (child.type !== 'Block' || !child.name) acc.push(self.visit(child));
-    else attrs.push({name: child.name, val: self.visit(child), block: true});
+    else attrs.push({name: child.name, val: self.visit(child), block: true, args: child.args});
     return acc;
   }, []);
 
@@ -279,7 +279,8 @@ Compiler.prototype.visitYield = function(node, ast) {
     type: 'yield',
     line: node.line,
     filename: node.filename,
-    name: node.val
+    name: node.val,
+    args: node.args
   };
 };
 
@@ -292,12 +293,14 @@ Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
     } else if (isTranslate && i == 0 && attr.val === true) {
       acc.path = {
         expression: JSON.stringify(attr.name),
-        escaped: attr.escaped
+        escaped: attr.escaped,
+        args: attr.args
       };
     } else {
       acc[attr.name] = {
         expression: attr.val,
-        escaped: attr.escaped
+        escaped: attr.escaped,
+        args: attr.args
       };
     }
     return acc;

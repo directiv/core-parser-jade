@@ -76,5 +76,35 @@ Lexer.prototype.code = function() {
 };
 
 Lexer.prototype['yield'] = function() {
-  return this.scan(/^yield? *([^\n]+)?/, 'yield');
+  var captures = /^yield\b *([^\n]+)?/.exec(this.input);
+  if (captures) {
+    this.consume(captures[0].length);
+    var name = captures[1];
+
+    var parts = (name || '').split(/ *\( */);
+
+    var tok = this.tok('yield', parts[0]);
+
+    if (parts[1]) tok.args = '(' + parts[1];
+
+    return tok;
+  }
+};
+
+Lexer.prototype.block = function() {
+  var captures = /^block\b *(?:(prepend|append) +)?([^\n]+)/.exec(this.input);
+  if (captures) {
+    this.consume(captures[0].length);
+    var mode = captures[1] || 'replace';
+    var name = captures[2];
+
+    var parts = (name || '').split(/ *\( */);
+
+    var tok = this.tok('block', parts[0]);
+
+    if (parts[1]) tok.args = '(' + parts[1];
+
+    tok.mode = mode;
+    return tok;
+  }
 };

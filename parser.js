@@ -20,6 +20,14 @@ Parser.prototype.parseExpr = function() {
   return {
     type: 'Yield',
     val: tok.val,
-    line: tok.line
+    line: tok.line,
+    args: tok.args
   };
+};
+
+Parser.prototype.parseBlock = function() {
+  var tok = this.peek();
+  var block = jade.Parser.prototype.parseBlock.apply(this, arguments);
+  block.args = tok.args;
+  return block;
 };
