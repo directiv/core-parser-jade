@@ -28,6 +28,7 @@ Parser.prototype.parseExpr = function() {
 Parser.prototype.parseBlock = function() {
   var tok = this.peek();
   var block = jade.Parser.prototype.parseBlock.apply(this, arguments);
+  delete this.blocks[block.name];
   block.args = tok.args;
   return block;
 };
