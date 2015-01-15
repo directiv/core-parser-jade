@@ -170,9 +170,13 @@ Compiler.prototype.visitTranslation = function(node, ast) {
     var name = child.name;
     if (!name) throw errorAtNode(node, new Error('Block missing name'));
 
+    var visited = self.visit(child);
+
+    if (visited.length === 1) visited[0].props.key = {name: name, expression: JSON.stringify(name)};
+
     attrs.push({
       name: name,
-      val: self.visit(child),
+      val: visited,
       block: true
     });
   });
