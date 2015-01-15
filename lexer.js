@@ -51,9 +51,19 @@ Lexer.prototype.conditional = function() {
   }
 };
 
+Lexer.prototype.while = function() {
+  var captures;
+  if (captures = /^while +([^\n]+)/.exec(this.input)) {
+    this.consume(captures[0].length);
+    var tok = this.tok('code', 'while (' + captures[1] + ')');
+    tok.requiresBlock = true;
+    return tok;
+  }
+}
+
 Lexer.prototype.each = function() {
   var captures;
-  if (captures = /^(?:- *)?(?:each|for|repeat) +([^\n]+)/.exec(this.input)) {
+  if (captures = /^(?:- *)?(?:each|for|repeat|while) +([^\n]+)/.exec(this.input)) {
     this.consume(captures[0].length);
     var tok = this.tok('each', captures[1]);
     tok.key = captures[2] || '$index';

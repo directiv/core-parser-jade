@@ -1,6 +1,7 @@
 {
   "name": "jade2ast",
   "version": "0.1.5",
+  "repository": "https://github.com/directiv/jade2ast.git",
   "description": "Jade syntax to ast",
   "main": "index.js",
   "scripts": {
