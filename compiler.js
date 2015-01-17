@@ -92,6 +92,7 @@ Compiler.prototype.visitTag = function(node, ast) {
   if (name === 'import') return self.visitImport(node, ast);
   if (name === 'var') return self.visitVar(node, ast);
   if (name === 'export') return self.visitExport(node, ast);
+  if (name === 'function') return self.visitFunction(node, ast);
 
   var attrs = node.attrs.slice();
 
@@ -131,6 +132,20 @@ Compiler.prototype.visitExport = function(node, ast) {
     }).join('\n'),
     line: node.line,
     filename: node.filename
+  }
+};
+
+Compiler.prototype.visitFunction = function(node, ast) {
+  var nodes = node.block.nodes;
+  var first = nodes[0];
+
+  var children = nodes.slice(1);
+
+  return {
+    type: 'function',
+    expression: first.val,
+    children: this.visitBlock({nodes: children}),
+    buffer: false
   }
 };
 
