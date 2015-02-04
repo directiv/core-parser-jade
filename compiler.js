@@ -118,7 +118,7 @@ Compiler.prototype.visitTag = function(node, ast) {
 Compiler.prototype.visitImport = function(node, ast) {
   return {
     type: 'import',
-    expression: node.block.nodes[0].val,
+    expression: nodesToExpr(node),
     line: node.line,
     filename: node.filename
   };
@@ -127,9 +127,7 @@ Compiler.prototype.visitImport = function(node, ast) {
 Compiler.prototype.visitExport = function(node, ast) {
   return {
     type: 'export',
-    expression: node.block.nodes.map(function(node) {
-      return node.val;
-    }).join('\n'),
+    expression: nodesToExpr(node),
     line: node.line,
     filename: node.filename
   }
@@ -152,7 +150,7 @@ Compiler.prototype.visitFunction = function(node, ast) {
 Compiler.prototype.visitVar = function(node, ast) {
   return {
     type: 'var',
-    expression: node.block.nodes[0].val,
+    expression: nodesToExpr(node),
     line: node.line,
     filename: node.filename
   };
@@ -350,4 +348,10 @@ function errorAtNode(node, error) {
   error.line = node.line;
   error.filename = node.filename;
   return error;
+}
+
+function nodesToExpr(node) {
+  return node.block.nodes.map(function(n) {
+    return n.val;
+  }).join('\n');
 }
