@@ -55,11 +55,16 @@ Compiler.prototype.visitBlock = function(node) {
 
   for (var i = 0; i < length; ++i) {
     var out = this.visit(node.nodes[i]);
-    if (!out) continue;
-    if (Array.isArray(out)) ast.push.apply(ast, out);
-    else ast.push(out);
+    this.mergeChildren(ast, out);
   }
   return ast;
+};
+
+Compiler.prototype.mergeChildren = function(acc, child) {
+  if (!child) return acc;
+  if (Array.isArray(child)) acc.push.apply(acc, child);
+  else acc.push(child);
+  return acc;
 };
 
 Compiler.prototype.visitMixinBlock = function(node, ast) {
@@ -99,7 +104,7 @@ Compiler.prototype.visitTag = function(node, ast) {
   var attrs = node.attrs.slice();
 
   var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).reduce(function(acc, child) {
-    if (child.type !== 'Block' || !child.name) acc.push(self.visit(child));
+    if (child.type !== 'Block' || !child.name) self.mergeChildren(acc, self.visit(child));
     else attrs.push({name: child.name, val: self.visit(child), block: true, args: child.args});
     return acc;
   }, []);
