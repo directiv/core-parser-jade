@@ -23,7 +23,7 @@ Compiler.prototype.visitCase = function(node) {
     line: node.line,
     filename: node.filename,
     buffer: true
-  }
+  };
 };
 
 Compiler.prototype.visitWhen = function(node) {
@@ -55,7 +55,9 @@ Compiler.prototype.visitBlock = function(node) {
 
   for (var i = 0; i < length; ++i) {
     var out = this.visit(node.nodes[i]);
-    if (out) ast.push(out);
+    if (!out) continue;
+    if (Array.isArray(out)) ast.push.apply(ast, out);
+    else ast.push(out);
   }
   return ast;
 };
@@ -83,7 +85,7 @@ Compiler.prototype.visitTag = function(node, ast) {
       node.block &&
       !(node.block.type === 'Block' && node.block.nodes.length === 0) &&
       node.block.nodes.some(function(tag) {
-        return tag.type !== 'Text' || !/^\s*$/.test(tag.val)
+        return tag.type !== 'Text' || !/^\s*$/.test(tag.val);
       })) {
     throw errorAtNode(node, new Error(name + ' is self closing and should not have content.'));
   }
@@ -130,7 +132,7 @@ Compiler.prototype.visitExport = function(node, ast) {
     expression: nodesToExpr(node),
     line: node.line,
     filename: node.filename
-  }
+  };
 };
 
 Compiler.prototype.visitFunction = function(node, ast) {
@@ -144,7 +146,7 @@ Compiler.prototype.visitFunction = function(node, ast) {
     expression: first.val,
     children: this.visitBlock({nodes: children}),
     buffer: false
-  }
+  };
 };
 
 Compiler.prototype.visitVar = function(node, ast) {
@@ -156,9 +158,28 @@ Compiler.prototype.visitVar = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitFilter = function(node, ast) {
-  // TODO
-  throw errorAtNode(node, new Error('Filters are not supported at this time'));
+Compiler.prototype.visitFilter = function(filter, ast) {
+  if (filter.name !== 'capture') throw errorAtNode(node, new Error('Filters are not supported at this time'));
+
+  var text = filter.block.nodes.map(
+    function(node){ return node.val; }
+  ).join('\n');
+
+  // TODO add line offset
+  var children = this.compileString(text, this.opts);
+
+  var attrs = filter.attrs;
+
+  var target = attrs.as || 'capture';
+
+  children.unshift({
+    type: 'var',
+    expression: target + ' = ' + JSON.stringify(text) + ';',
+    line: filter.line,
+    filename: filter.filename
+  });
+
+  return children;
 };
 
 Compiler.prototype.visitText = function(node, ast) {

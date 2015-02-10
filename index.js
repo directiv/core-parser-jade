@@ -15,6 +15,8 @@ exports = module.exports = function(str, opts) {
   return jade.compile(str, opts)();
 };
 
+Compiler.prototype.compileString = exports;
+
 exports.file = function(path, opts) {
   opts = opts || {};
   opts.compiler = Compiler;
