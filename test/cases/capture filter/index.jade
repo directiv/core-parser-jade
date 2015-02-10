@@ -1,8 +1,12 @@
 
 div
   each num in [1,2,3,4,5]
-    :capture(as='content')
+    :capture(as='content' unquote)
       import foo from 'other'
+      Foo
+        Bar
+          Baz other
+          Doe testing
       div(class='item-' + num item=num)
         = 'Hello, ' + num
         | Testing
