@@ -1,3 +1,9 @@
+/**
+ * Module dependencies
+ */
+
+var capture = require('./lib/capture');
+
 module.exports = Compiler;
 
 function Compiler(node, opts) {
@@ -165,26 +171,7 @@ Compiler.prototype.visitVar = function(node, ast) {
 
 Compiler.prototype.visitFilter = function(filter, ast) {
   if (filter.name !== 'capture') throw errorAtNode(node, new Error('Filters are not supported at this time'));
-
-  var text = filter.block.nodes.map(
-    function(node){ return node.val; }
-  ).join('\n');
-
-  // TODO add line offset
-  var children = this.compileString(text, this.opts);
-
-  var attrs = filter.attrs;
-
-  var target = attrs.as || 'capture';
-
-  children.unshift({
-    type: 'var',
-    expression: target + ' = ' + JSON.stringify(text) + ';',
-    line: filter.line,
-    filename: filter.filename
-  });
-
-  return children;
+  return capture(filter, this);
 };
 
 Compiler.prototype.visitText = function(node, ast) {

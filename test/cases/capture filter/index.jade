@@ -1,9 +1,8 @@
 
-.foo
-  :capture(as='content')
-    div
-      span
-        h1 Hello!
-
-:capture
-  span Other
+div
+  each num in [1,2,3,4,5]
+    :capture(as='content')
+      import foo from 'other'
+      div(class='item-' + num item=num)
+        = 'Hello, ' + num
+        | Testing
