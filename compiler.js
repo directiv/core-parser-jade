@@ -384,7 +384,7 @@ function addParentClass(parent, block, child) {
     return child;
   }
 
-  if (!child || !child.attrs) return child;
+  if (!child || !Array.isArray(child.attrs)) return child;
   var first = parent.charAt(0);
   if (first !== first.toUpperCase()) return child;
 
