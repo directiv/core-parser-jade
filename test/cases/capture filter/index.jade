@@ -3,8 +3,11 @@ div
   each num in [1,2,3,4,5]
     :capture(as='content' unquote)
       import foo from 'other'
-      Foo
-        Bar
+      Foo.foo
+        Bar.bar
+          block hello
+            span World
+            | !
           Baz other
           Doe testing
       div(class='item-' + num item=num)

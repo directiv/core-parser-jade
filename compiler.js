@@ -16,9 +16,9 @@ Compiler.prototype.compile = function() {
   return 'return ' + JSON.stringify(ast) + ';';
 };
 
-Compiler.prototype.visit = function(node) {
+Compiler.prototype.visit = function(node, parent) {
   if (!node || !node.type) return undefined;
-  return this['visit' + node.type](node);
+  return this['visit' + node.type](node, parent);
 };
 
 Compiler.prototype.visitCase = function(node) {
@@ -73,22 +73,22 @@ Compiler.prototype.mergeChildren = function(acc, child) {
   return acc;
 };
 
-Compiler.prototype.visitMixinBlock = function(node, ast) {
+Compiler.prototype.visitMixinBlock = function(node) {
   // TODO
   throw errorAtNode(node, new Error('Mixins are not supported at this time'));
 };
 
-Compiler.prototype.visitDoctype = function(node, ast) {
+Compiler.prototype.visitDoctype = function(node) {
   // TODO
   throw errorAtNode(node, new Error('Doctypes are not supported at this time'));
 };
 
-Compiler.prototype.visitMixin = function(node, ast) {
+Compiler.prototype.visitMixin = function(node) {
   // TODO
   throw errorAtNode(node, new Error('Mixins are not supported at this time'));
 };
 
-Compiler.prototype.visitTag = function(node, ast) {
+Compiler.prototype.visitTag = function(node) {
   var self = this;
   var name = node.name;
 
@@ -101,19 +101,15 @@ Compiler.prototype.visitTag = function(node, ast) {
     throw errorAtNode(node, new Error(name + ' is self closing and should not have content.'));
   }
 
-  if (name === 't') return self.visitTranslation(node, ast);
-  if (name === 'import') return self.visitImport(node, ast);
-  if (name === 'var') return self.visitVar(node, ast);
-  if (name === 'export') return self.visitExport(node, ast);
-  if (name === 'function') return self.visitFunction(node, ast);
+  if (name === 't') return self.visitTranslation(node);
+  if (name === 'import') return self.visitImport(node);
+  if (name === 'var') return self.visitVar(node);
+  if (name === 'export') return self.visitExport(node);
+  if (name === 'function') return self.visitFunction(node);
 
   var attrs = node.attrs.slice();
 
-  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : [])).reduce(function(acc, child) {
-    if (child.type !== 'Block' || !child.name) self.mergeChildren(acc, self.visit(child));
-    else attrs.push({name: child.name, val: self.visit(child), block: true, args: child.args});
-    return acc;
-  }, []);
+  var children = this.visitChildren(node, attrs);
 
   var el = {
     type: 'tag',
@@ -128,7 +124,20 @@ Compiler.prototype.visitTag = function(node, ast) {
   return el;
 };
 
-Compiler.prototype.visitImport = function(node, ast) {
+Compiler.prototype.visitChildren = function(node, attrs) {
+  var self = this;
+  var parent = node.name;
+  var children = (node.block && node.block.nodes.length && node.block.nodes || (node.code ? [node.code] : []));
+  return children.reduce(function(acc, child) {
+    var name = child.args && child.name;
+    var c = self.visit(addParentClass(parent, name, child));
+    if (child.type !== 'Block' || !child.name) self.mergeChildren(acc, c);
+    else attrs.push({name: child.name, val: c, block: true, args: child.args});
+    return acc;
+  }, []);
+};
+
+Compiler.prototype.visitImport = function(node) {
   return {
     type: 'import',
     expression: nodesToExpr(node),
@@ -137,7 +146,7 @@ Compiler.prototype.visitImport = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitExport = function(node, ast) {
+Compiler.prototype.visitExport = function(node) {
   return {
     type: 'export',
     expression: nodesToExpr(node),
@@ -146,7 +155,7 @@ Compiler.prototype.visitExport = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitFunction = function(node, ast) {
+Compiler.prototype.visitFunction = function(node) {
   var nodes = node.block.nodes;
   var first = nodes[0];
 
@@ -160,7 +169,7 @@ Compiler.prototype.visitFunction = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitVar = function(node, ast) {
+Compiler.prototype.visitVar = function(node) {
   return {
     type: 'var',
     expression: nodesToExpr(node),
@@ -169,12 +178,12 @@ Compiler.prototype.visitVar = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitFilter = function(filter, ast) {
+Compiler.prototype.visitFilter = function(filter) {
   if (filter.name !== 'capture') throw errorAtNode(node, new Error('Filters are not supported at this time'));
   return capture(filter, this);
 };
 
-Compiler.prototype.visitText = function(node, ast) {
+Compiler.prototype.visitText = function(node) {
   if (!node.val) return false;
   // TODO interpolation
   // TODO unescape html expressions
@@ -187,7 +196,7 @@ Compiler.prototype.visitText = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitTranslation = function(node, ast) {
+Compiler.prototype.visitTranslation = function(node) {
   var self = this;
   var attrs = node.attrs.slice();
 
@@ -220,7 +229,7 @@ Compiler.prototype.visitTranslation = function(node, ast) {
   return el;
 };
 
-Compiler.prototype.visitComment = function(node, ast) {
+Compiler.prototype.visitComment = function(node) {
   return {
     type: node.buffer ? 'comment' : 'js_comment',
     value: node.val,
@@ -229,7 +238,7 @@ Compiler.prototype.visitComment = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitBlockComment = function(node, ast) {
+Compiler.prototype.visitBlockComment = function(node) {
   var value = node.block.nodes.map(function(comment) {
     return comment.val;
   }).join('\n');
@@ -294,7 +303,7 @@ Compiler.prototype.visitCode = function(node) {
   throw node;
 };
 
-Compiler.prototype.visitEach = function(node, ast) {
+Compiler.prototype.visitEach = function(node) {
   var parts = node.val.split(/ +in +/);
 
   if (parts.length === 1) return {
@@ -316,7 +325,7 @@ Compiler.prototype.visitEach = function(node, ast) {
   };
 };
 
-Compiler.prototype.visitYield = function(node, ast) {
+Compiler.prototype.visitYield = function(node) {
   return {
     type: 'yield',
     line: node.line,
@@ -367,4 +376,23 @@ function nodesToExpr(node) {
   return node.block.nodes.map(function(n) {
     return n.val;
   }).join('\n');
+}
+
+function addParentClass(parent, block, child) {
+  if (child && child.nodes) {
+    child.nodes = child.nodes.map(addParentClass.bind(null, parent, child.name));
+    return child;
+  }
+
+  if (!child || !child.attrs) return child;
+  var first = parent.charAt(0);
+  if (first !== first.toUpperCase()) return child;
+
+  var name = parent + '-block';
+  if (block) name += '-' + block;
+  child.attrs.push({
+    name: 'class',
+    val: JSON.stringify(name)
+  });
+  return child;
 }
