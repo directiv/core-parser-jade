@@ -111,7 +111,7 @@ Compiler.prototype.visitTag = function(node) {
 
   var children = this.visitChildren(node, attrs);
 
-  var el = {
+  return {
     type: 'tag',
     name: name,
     props: this.visitAttributes(attrs, node.attributeBlocks),
@@ -120,8 +120,6 @@ Compiler.prototype.visitTag = function(node) {
     filename: node.filename,
     buffer: true
   };
-
-  return el;
 };
 
 Compiler.prototype.visitChildren = function(node, attrs) {
@@ -380,13 +378,32 @@ function nodesToExpr(node) {
 
 function addParentClass(parent, block, child) {
   if (child && child.nodes) {
-    child.nodes = child.nodes.map(addParentClass.bind(null, parent, child.name));
+    child.nodes = addParentClassToChildren(parent, child.name, child.nodes);
+    return child;
+  }
+  if ((child.type === 'Code' || child.type === 'Each') && child.block && child.block.nodes) {
+    child.block.nodes = addParentClassToChildren(parent, block, child.block.nodes);
     return child;
   }
 
-  if (!child || !Array.isArray(child.attrs)) return child;
+  // only apply block classes to PascalCase tags
   var first = parent.charAt(0);
   if (first !== first.toUpperCase()) return child;
+
+  // wrap text nodes in a span
+  if (child.type === 'Text') child = {
+    type: 'Tag',
+    name: 'span',
+    attributeNames: [],
+    attrs: [],
+    attributeBlocks: [],
+    block: {nodes: [child]},
+    selfClosing: false,
+    line: child.line,
+    filename: child.filename
+  };
+
+  if (!child || !Array.isArray(child.attrs)) return child;
 
   var name = parent + '-block';
   if (block) name += '-' + block;
@@ -395,4 +412,8 @@ function addParentClass(parent, block, child) {
     val: JSON.stringify(name)
   });
   return child;
+}
+
+function addParentClassToChildren(parent, block, children) {
+  return (children || []).map(addParentClass.bind(null, parent, block));
 }

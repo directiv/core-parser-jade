@@ -16,7 +16,7 @@ Lexer.prototype.conditional = function() {
   var captures;
   if (captures = /^(if|unless|else if|else)\b([^\n]*)/.exec(this.input)) {
     this.consume(captures[0].length);
-    var type = captures[1]
+    var type = captures[1];
     var js = captures[2];
     var isIf = false;
     var isElse = false;
