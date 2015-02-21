@@ -5,6 +5,7 @@
 var jade = require('jade');
 var inherits = require('util').inherits;
 var Lexer = require('./lexer');
+var Attrs = require('jade/lib/nodes/attrs');
 
 module.exports = Parser;
 
@@ -31,4 +32,13 @@ Parser.prototype.parseBlock = function() {
   delete this.blocks[block.name];
   block.args = tok.args;
   return block;
+};
+
+Attrs.prototype.setAttribute = function(name, val, escaped) {
+  if (name !== 'class' && name !== '`' && name !== 'style' && this.attributeNames.indexOf(name) !== -1) {
+    throw new Error('Duplicate attribute "' + name + '" is not allowed.');
+  }
+  this.attributeNames.push(name);
+  this.attrs.push({ name: name, val: val, escaped: escaped });
+  return this;
 };

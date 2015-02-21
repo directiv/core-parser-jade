@@ -334,11 +334,17 @@ Compiler.prototype.visitYield = function(node) {
 };
 
 Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
+  var styles = [];
   var classes = [];
+  var merges = [];
 
   var out = attrs.reduce(function(acc, attr, i) {
     if (attr.name === 'class') {
       classes.push(attr.val);
+    } else if (attr.name === 'style') {
+      styles.push(attr.val);
+    } else if (attr.name === '`') {
+      merges.push(attr.val);
     } else if (isTranslate && i == 0 && attr.val === true) {
       acc.path = {
         expression: JSON.stringify(attr.name),
@@ -355,9 +361,21 @@ Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
     return acc;
   }, {});
 
+  if (styles.length) {
+    out.style = {
+      expressions: classes
+    };
+  }
+
   if (classes.length) {
     out['class'] = {
       expressions: classes
+    };
+  }
+
+  if (merges.length) {
+    out['`'] = {
+      expressions: merges
     };
   }
 
