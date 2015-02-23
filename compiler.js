@@ -114,8 +114,7 @@ Compiler.prototype.visitTag = function(node) {
   return {
     type: 'tag',
     name: name,
-    props: this.visitAttributes(attrs),
-    propsExpressions: node.attributeBlocks,
+    props: this.visitAttributes(attrs, node.attributeBlocks),
     children: children,
     line: node.line,
     filename: node.filename,
@@ -218,8 +217,7 @@ Compiler.prototype.visitTranslation = function(node) {
   var el = {
     type: 'tag',
     name: 't',
-    props: this.visitAttributes(attrs, true),
-    propsExpressions: node.attributeBlocks,
+    props: this.visitAttributes(attrs, node.attributeBlocks, true),
     children: children,
     line: node.line,
     filename: node.filename,
@@ -335,7 +333,7 @@ Compiler.prototype.visitYield = function(node) {
   };
 };
 
-Compiler.prototype.visitAttributes = function(attrs, isTranslate) {
+Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
   var styles = [];
   var classes = [];
 
@@ -369,6 +367,12 @@ Compiler.prototype.visitAttributes = function(attrs, isTranslate) {
   if (classes.length) {
     out['class'] = {
       expressions: classes
+    };
+  }
+
+  if (blocks && blocks.length) {
+    out['&props'] = {
+      expressions: blocks
     };
   }
 
