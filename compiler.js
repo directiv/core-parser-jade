@@ -360,7 +360,7 @@ Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
 
   if (styles.length) {
     out.style = {
-      expressions: classes
+      expressions: styles
     };
   }
 
