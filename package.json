@@ -1,6 +1,6 @@
 {
   "name": "jade2ast",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "Jade syntax to ast",
   "main": "index.js",
   "scripts": {
