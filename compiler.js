@@ -338,7 +338,7 @@ Compiler.prototype.visitAttributes = function(attrs, blocks, isTranslate) {
   var classes = [];
 
   var out = attrs.reduce(function(acc, attr, i) {
-    if (attr.name === 'class') {
+    if (attr.name === 'class' || attr.name === 'className') {
       classes.push(attr.val);
     } else if (attr.name === 'style') {
       styles.push(attr.val);

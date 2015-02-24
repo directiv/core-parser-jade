@@ -35,7 +35,7 @@ Parser.prototype.parseBlock = function() {
 };
 
 Attrs.prototype.setAttribute = function(name, val, escaped) {
-  if (name !== 'class' && name !== '`' && name !== 'style' && this.attributeNames.indexOf(name) !== -1) {
+  if (name !== 'class' && name !== 'className' && name !== 'style' && this.attributeNames.indexOf(name) !== -1) {
     throw new Error('Duplicate attribute "' + name + '" is not allowed.');
   }
   this.attributeNames.push(name);
