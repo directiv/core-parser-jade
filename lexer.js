@@ -108,3 +108,13 @@ Lexer.prototype.block = function() {
     return tok;
   }
 };
+
+Lexer.prototype.attributesBlock = function() {
+  var captures;
+  if (/^&props\b/.test(this.input)) {
+    this.consume('&props'.length);
+    var args = this.bracketExpression();
+    this.consume(args.end + 1);
+    return this.tok('&attributes', args.src);
+  }
+};
