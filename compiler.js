@@ -63,7 +63,17 @@ Compiler.prototype.visitBlock = function(node) {
     var out = this.visit(node.nodes[i]);
     this.mergeChildren(ast, out);
   }
-  return ast;
+
+  if (!node.name || node.isSubBlock) return ast;
+
+  return {
+    type: 'block',
+    name: node.name,
+    children: ast,
+    line: node.line,
+    filename: node.filename,
+    args: node.args
+  };
 };
 
 Compiler.prototype.mergeChildren = function(acc, child) {
