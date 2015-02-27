@@ -67,7 +67,7 @@ Compiler.prototype.visitBlock = function(node) {
   if (!node.name || node.isSubBlock) return ast;
 
   return {
-    type: 'block',
+    type: 'named_block',
     name: node.name,
     children: ast,
     line: node.line,
