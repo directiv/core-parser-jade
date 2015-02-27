@@ -64,7 +64,7 @@ Compiler.prototype.visitBlock = function(node) {
     this.mergeChildren(ast, out);
   }
 
-  if (!node.name || node.isSubBlock) return ast;
+  if (!node.name || node.name.indexOf('!') !== 0 || node.isSubBlock) return ast;
 
   return {
     type: 'named_block',
