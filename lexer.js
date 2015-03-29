@@ -63,7 +63,15 @@ Lexer.prototype.each = function() {
 };
 
 Lexer.prototype.code = function() {
-  var captures;
+  var captures = /^(console|debugger)([^\n]+)?$/m.exec(this.input);
+
+  if (captures && captures.index === 1) {
+    this.consume(captures[0].length + 1);
+    var tok = this.tok('code', 'EXPif(process.env.NODE_ENV!=="production")' + captures[0]);
+    tok.escape = tok.buffer = false;
+    return tok;
+  }
+
   if (captures = /^(!?=|-)[ \t]*([^\n]+)/.exec(this.input)) {
     this.consume(captures[0].length);
     var flags = captures[1];
