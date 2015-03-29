@@ -114,6 +114,7 @@ Compiler.prototype.visitTag = function(node) {
   if (name === 't') return self.visitTranslation(node);
   if (name === 'import') return self.visitImport(node);
   if (name === 'var') return self.visitVar(node);
+  if (name === 'const') return self.visitConst(node);
   if (name === 'export') return self.visitExport(node);
   if (name === 'function') return self.visitFunction(node);
 
@@ -180,6 +181,15 @@ Compiler.prototype.visitFunction = function(node) {
 Compiler.prototype.visitVar = function(node) {
   return {
     type: 'var',
+    expression: nodesToExpr(node),
+    line: node.line,
+    filename: node.filename
+  };
+};
+
+Compiler.prototype.visitConst = function(node) {
+  return {
+    type: 'const',
     expression: nodesToExpr(node),
     line: node.line,
     filename: node.filename
