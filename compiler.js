@@ -197,8 +197,19 @@ Compiler.prototype.visitConst = function(node) {
 };
 
 Compiler.prototype.visitFilter = function(filter) {
-  if (filter.name !== 'capture') throw errorAtNode(node, new Error('Filters are not supported at this time'));
-  return capture(filter, this);
+  if (filter.name === 'capture') return capture(filter, this);
+  var text = filter.block.nodes.map(
+    function(node){ return node.val; }
+  ).join('\n');
+
+  return {
+    type: 'filter',
+    name: filter.name,
+    attrs: filter.attrs,
+    content: text,
+    line: filter.line,
+    filename: filter.filename
+  };
 };
 
 Compiler.prototype.visitText = function(node) {
