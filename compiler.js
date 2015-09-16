@@ -241,7 +241,8 @@ Compiler.prototype.visitTranslation = function(node) {
     attrs.push({
       name: name,
       val: visited,
-      block: true
+      block: true,
+      args: child.args
     });
   });
 
